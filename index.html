@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ordenar Personas</title>
+</head>
+<body>
+
+<h2>Subir archivo de personas</h2>
+
+<input type="file" id="fileInput">
+<button onclick="enviarArchivo()">Subir</button>
+
+<h3>Personas Ordenadas</h3>
+<ul id="lista"></ul>
+
+<script>
+function enviarArchivo() {
+    const archivo = document.getElementById("fileInput").files[0];
+    const formData = new FormData();
+    formData.append("file", archivo);
+
+    fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const lista = document.getElementById("lista");
+        lista.innerHTML = "";
+
+        data.forEach(persona => {
+            const li = document.createElement("li");
+            li.textContent = persona.nombre + " - " + persona.edad;
+            lista.appendChild(li);
+        });
+    });
+}
+</script>
+
+</body>
+</html>
