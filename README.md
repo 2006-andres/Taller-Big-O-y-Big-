@@ -1,1 +1,0 @@
-# Taller-Big-O-y-Big-
