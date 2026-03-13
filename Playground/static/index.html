@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ordenador de Personas</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Prueba técnica</p>
+        <h1>Sube un archivo TXT y ordénalo en segundos</h1>
+        <p class="lead">
+          La aplicación recibe una lista desordenada de personas, la procesa en el backend
+          y muestra el resultado ordenado en esta misma pantalla.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="upload-card">
+          <label for="fileInput" class="input-label">Archivo CSV o TXT</label>
+          <input id="fileInput" type="file" accept=".csv,.txt" />
+          <button id="processButton" type="button">Procesar archivo</button>
+          <p class="hint">
+            Soporta CSV con columnas como <code>apellido1,nombre,apellido2,nombre2,Numcelular,correo,cedula</code>
+            y también TXT con líneas libres tipo <code>Nombre: Ana, Edad: 28, Correo: ana@email.com</code>.
+          </p>
+          <p id="statusMessage" class="status"></p>
+        </div>
+
+        <div class="example-card">
+          <h2>Ejemplo rápido</h2>
+          <pre>apellido1,nombre,apellido2,nombre2,Numcelular,correo,cedula
+Flores,Daniela,Castro,Luis,3693229354,daniela.flores81@outlook.com,2206935649
+González,Felipe,Suárez,Laura,3999966867,felipe.gonzález147@outlook.com,4469461829</pre>
+        </div>
+      </section>
+
+      <section class="results">
+        <div class="results-header">
+          <h2>Personas ordenadas</h2>
+          <span id="totalBadge" class="badge">0 registros</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre completo</th>
+                <th>Primer nombre</th>
+                <th>Segundo nombre</th>
+                <th>Primer apellido</th>
+                <th>Segundo apellido</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Cédula</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <tr>
+                <td colspan="8" class="empty">Todavía no has procesado ningún archivo.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
