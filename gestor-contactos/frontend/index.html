@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Contactos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Variables ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #181c27;
+      --surface2: #1f2435;
+      --border:   #2a3049;
+      --border2:  #3a4460;
+      --accent:   #4f8ef7;
+      --accent2:  #7eb3ff;
+      --success:  #3ecf8e;
+      --warn:     #f5a623;
+      --text:     #e8ecf4;
+      --text2:    #8a93b2;
+      --text3:    #4d5880;
+      --radius:   10px;
+      --radius-lg:16px;
+      --font:     'DM Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-left h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .header-left p {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text3);
+    }
+    .dot.ok { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot.err { background: #f74f4f; }
+
+    /* ── Upload Zone ─────────────────────────────────────────────────── */
+    .upload-section { margin-bottom: 1.5rem; }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      background: var(--surface);
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.05);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .drop-zone h3 {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .drop-zone p {
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .drop-zone .file-name {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--accent2);
+      font-family: var(--mono);
+    }
+
+    /* ── Stats ───────────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.success { color: var(--success); }
+
+    /* ── Controls ────────────────────────────────────────────────────── */
+    .controls-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px 8px 34px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--text3); }
+    .search-icon {
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-label {
+      font-size: 11px;
+      color: var(--text3);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text);
+      font-family: var(--font);
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:focus { border-color: var(--accent); }
+    select option { background: var(--surface2); }
+
+    /* ── Table ───────────────────────────────────────────────────────── */
+    .table-container {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead { background: var(--surface2); }
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: var(--text); }
+    th.sorted { color: var(--accent2); }
+    .th-inner { display: flex; align-items: center; gap: 4px; }
+    .sort-arrow { font-size: 10px; opacity: 0.5; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    td {
+      padding: 10px 14px;
+      color: var(--text);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    td.mono { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+    td.email { color: var(--accent2); font-size: 12px; }
+    .idx-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      background: rgba(79,142,247,0.15);
+      color: var(--accent2);
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: var(--mono);
+    }
+
+    /* ── Pagination ──────────────────────────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .pg-buttons { display: flex; gap: 4px; }
+    .pg-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 11px;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .pg-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(79,142,247,0.1); }
+    .pg-btn:disabled { opacity: 0.3; cursor: default; }
+    .pg-btn.current {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* ── States ──────────────────────────────────────────────────────── */
+    .empty-state {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text2);
+    }
+    .empty-state p { font-size: 14px; }
+    .loading {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text2);
+      font-size: 13px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      z-index: 999;
+      max-width: 320px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.err { border-color: #f74f4f; color: #ff8585; }
+    .toast.ok { border-color: var(--success); color: var(--success); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .controls-bar { flex-direction: column; align-items: stretch; }
+      .ctrl-group { justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <h1>📋 Gestor de Contactos</h1>
+      <p>Carga, procesa y ordena tu lista de personas desde un archivo CSV o TXT</p>
+    </div>
+    <div class="status-dot">
+      <div class="dot" id="serverDot"></div>
+      <span id="serverStatus">Conectando...</span>
+    </div>
+  </header>
+
+  <!-- Upload -->
+  <section class="upload-section">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".csv,.txt" />
+      <span class="drop-icon">📂</span>
+      <h3>Arrastra tu archivo aquí o haz clic para seleccionar</h3>
+      <p>Soporta archivos <strong>.csv</strong> y <strong>.txt</strong> delimitados por comas</p>
+      <p class="file-name" id="fileName"></p>
+    </div>
+  </section>
+
+  <!-- Stats (hidden until data loaded) -->
+  <div class="stats-grid" id="statsGrid" style="display:none">
+    <div class="stat-card">
+      <div class="stat-label">Total registros</div>
+      <div class="stat-value accent" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Filtrados</div>
+      <div class="stat-value" id="statFiltered">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Página actual</div>
+      <div class="stat-value" id="statPage">1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total páginas</div>
+      <div class="stat-value" id="statPages">1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Por página</div>
+      <div class="stat-value success" id="statPerPage">20</div>
+    </div>
+  </div>
+
+  <!-- Controls (hidden until data loaded) -->
+  <div class="controls-bar" id="controlsBar" style="display:none">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar por nombre, apellido, cédula, correo..." />
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Ordenar por</span>
+      <select id="sortField">
+        <option value="apellido1">Apellido 1</option>
+        <option value="nombre">Nombre</option>
+        <option value="apellido2">Apellido 2</option>
+        <option value="nombre2">Nombre 2</option>
+        <option value="Numcelular">Celular</option>
+        <option value="correo">Correo</option>
+        <option value="cedula">Cédula</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Dirección</span>
+      <select id="sortDir">
+        <option value="asc">A → Z</option>
+        <option value="desc">Z → A</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Registros</span>
+      <select id="perPage">
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div id="mainContent">
+    <div class="empty-state">
+      <p>⬆️ Carga un archivo para comenzar</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3001/api';
+  const FIELDS = ['apellido1','nombre','apellido2','nombre2','Numcelular','correo','cedula'];
+  const LABELS = {
+    apellido1:'Apellido 1', nombre:'Nombre', apellido2:'Apellido 2',
+    nombre2:'Nombre 2', Numcelular:'Celular', correo:'Correo', cedula:'Cédula'
+  };
+
+  let rawData = [];
+  let currentPage = 1;
+  let lastResponse = null;
+
+  // ── Verificar servidor ────────────────────────────────────────────────────
+  async function checkServer() {
+    try {
+      const r = await fetch(`${API}/health`);
+      const d = await r.json();
+      if (d.status === 'ok') {
+        document.getElementById('serverDot').className = 'dot ok';
+        document.getElementById('serverStatus').textContent = 'Servidor conectado';
+      }
+    } catch {
+      document.getElementById('serverDot').className = 'dot err';
+      document.getElementById('serverStatus').textContent = 'Sin conexión al backend';
+    }
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => { t.className = 'toast'; }, 3500);
+  }
+
+  // ── Upload ────────────────────────────────────────────────────────────────
+  async function uploadFile(file) {
+    document.getElementById('fileName').textContent = '📎 ' + file.name;
+    showContent('<div class="loading"><span class="spinner"></span> Enviando al backend...</div>');
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const r = await fetch(`${API}/upload`, { method: 'POST', body: form });
+      const d = await r.json();
+
+      if (!d.success) throw new Error(d.error || 'Error al procesar');
+
+      rawData = d.data;
+      document.getElementById('statTotal').textContent = d.total.toLocaleString();
+      document.getElementById('statsGrid').style.display = 'grid';
+      document.getElementById('controlsBar').style.display = 'flex';
+      currentPage = 1;
+
+      showToast(`✅ ${d.total.toLocaleString()} registros cargados`, 'ok');
+      await processAndRender();
+
+    } catch (err) {
+      showContent('<div class="empty-state"><p>❌ Error: ' + err.message + '</p></div>');
+      showToast('Error: ' + err.message, 'err');
+    }
+  }
+
+  // ── Process & Render ──────────────────────────────────────────────────────
+  async function processAndRender() {
+    showContent('<div class="loading"><span class="spinner"></span> Procesando datos...</div>');
+
+    const body = {
+      data: rawData,
+      sortField: document.getElementById('sortField').value,
+      sortDirection: document.getElementById('sortDir').value,
+      search: document.getElementById('searchInput').value,
+      page: currentPage,
+      perPage: parseInt(document.getElementById('perPage').value),
+    };
+
+    try {
+      const r = await fetch(`${API}/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.error);
+
+      lastResponse = d;
+      updateStats(d);
+      renderTable(d);
+
+    } catch (err) {
+      showContent('<div class="empty-state"><p>❌ Error: ' + err.message + '</p></div>');
+      showToast('Error al procesar: ' + err.message, 'err');
+    }
+  }
+
+  // ── Update Stats ──────────────────────────────────────────────────────────
+  function updateStats(d) {
+    document.getElementById('statFiltered').textContent  = d.total.toLocaleString();
+    document.getElementById('statPage').textContent      = d.currentPage;
+    document.getElementById('statPages').textContent     = d.totalPages;
+    document.getElementById('statPerPage').textContent   = d.perPage;
+  }
+
+  // ── Render Table ──────────────────────────────────────────────────────────
+  function renderTable(d) {
+    if (d.data.length === 0) {
+      showContent('<div class="empty-state"><p>🔍 Sin resultados para tu búsqueda</p></div>');
+      return;
+    }
+
+    const sortField = document.getElementById('sortField').value;
+    const sortDir   = document.getElementById('sortDir').value;
+    const arrow     = sortDir === 'asc' ? '↑' : '↓';
+
+    const thead = `<tr>
+      <th style="width:52px"><div class="th-inner">#</div></th>
+      ${FIELDS.map(f => `
+        <th class="${f === sortField ? 'sorted' : ''}" onclick="sortBy('${f}')">
+          <div class="th-inner">
+            ${LABELS[f]}
+            <span class="sort-arrow">${f === sortField ? arrow : '⇅'}</span>
+          </div>
+        </th>`).join('')}
+    </tr>`;
+
+    const perPage  = parseInt(document.getElementById('perPage').value);
+    const startIdx = (d.currentPage - 1) * perPage;
+
+    const tbody = d.data.map((row, i) => {
+      const n = startIdx + i + 1;
+      return `<tr>
+        <td><span class="idx-badge">${n}</span></td>
+        <td>${row.apellido1 || '—'}</td>
+        <td>${row.nombre || '—'}</td>
+        <td>${row.apellido2 || '—'}</td>
+        <td>${row.nombre2 || '—'}</td>
+        <td class="mono">${row.Numcelular || '—'}</td>
+        <td class="email">${row.correo || '—'}</td>
+        <td class="mono">${row.cedula || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    const pagination = buildPagination(d);
+
+    showContent(`
+      <div class="table-container">
+        <div class="table-scroll">
+          <table>
+            <thead>${thead}</thead>
+            <tbody>${tbody}</tbody>
+          </table>
+        </div>
+        ${pagination}
+      </div>
+    `);
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  function buildPagination(d) {
+    const { currentPage: cp, totalPages: tp, total, perPage: pp } = d;
+    const start = (cp - 1) * pp + 1;
+    const end   = Math.min(cp * pp, total);
+
+    let pages = [];
+    for (let p = Math.max(1, cp - 2); p <= Math.min(tp, cp + 2); p++) {
+      pages.push(p);
+    }
+
+    const btn = (label, page, disabled = false, current = false) =>
+      `<button class="pg-btn${current ? ' current' : ''}" 
+        onclick="goPage(${page})" ${disabled ? 'disabled' : ''}>
+        ${label}
+      </button>`;
+
+    return `
+      <div class="pagination">
+        <span>Mostrando ${start.toLocaleString()}–${end.toLocaleString()} de ${total.toLocaleString()} registros</span>
+        <div class="pg-buttons">
+          ${btn('«', 1, cp === 1)}
+          ${btn('‹', cp - 1, cp === 1)}
+          ${pages.map(p => btn(p, p, false, p === cp)).join('')}
+          ${btn('›', cp + 1, cp === tp)}
+          ${btn('»', tp, cp === tp)}
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function showContent(html) {
+    document.getElementById('mainContent').innerHTML = html;
+  }
+
+  function goPage(p) {
+    currentPage = p;
+    processAndRender();
+  }
+
+  function sortBy(field) {
+    const sf = document.getElementById('sortField');
+    const sd = document.getElementById('sortDir');
+    if (sf.value === field) {
+      sd.value = sd.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      sf.value = field;
+      sd.value = 'asc';
+    }
+    currentPage = 1;
+    processAndRender();
+  }
+
+  // ── Events ────────────────────────────────────────────────────────────────
+  document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) uploadFile(e.target.files[0]);
+  });
+
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+  });
+
+  let searchTimer;
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; processAndRender(); }, 350);
+  });
+
+  document.getElementById('sortField').addEventListener('change', () => { currentPage = 1; processAndRender(); });
+  document.getElementById('sortDir').addEventListener('change',   () => { currentPage = 1; processAndRender(); });
+  document.getElementById('perPage').addEventListener('change',   () => { currentPage = 1; processAndRender(); });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  checkServer();
+</script>
+</body>
+</html>
